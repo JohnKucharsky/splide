@@ -1,11 +1,12 @@
 import { Fragment, useEffect, useState } from "react";
-import Tags from "./components/Tags";
+import Tags from "./components/Tags/Tags";
 import { arr, tableArr } from "./data";
 import styles from "./App.module.scss";
 import { Popover } from "@mui/material";
 import FormGroup from "@mui/material/FormGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
+import CheckboxPopover from "./components/CheckboxPopover/CheckboxPopover";
 
 const svgTableIcon = (
     <svg
@@ -26,74 +27,60 @@ function App() {
     const [term, setTerm] = useState<"company" | "contact" | "country">(
         "company",
     );
-    const [checked, setChecked] = useState(initialValue());
-    function initialValue() {
+    const [filtersArray, setFiltersArray] = useState<{
+        [string: string]: { [string: string]: boolean };
+    }>({
+        company: initialValue("company"),
+        contact: initialValue("contact"),
+        country: initialValue("country"),
+    });
+
+    function initialValue(termm: string) {
         const obj: { [string: string]: boolean } = tableArr.reduce(
-            (o, key) => ({ ...o, [key[term]]: false }),
+            (o, key) => ({
+                ...o,
+                [key[termm as "company" | "contact" | "country"]]: false,
+            }),
             {},
         );
         return obj;
     }
 
-    useEffect(() => {
-        setChecked({ ...initialValue() });
-    }, [term]);
+    function dataToSend() {
+        let obj = {
+            company: getArrayforObject("company"),
+            contact: getArrayforObject("contact"),
+            country: getArrayforObject("country"),
+        };
 
-    console.log(checked);
-
-    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setChecked({
-            ...checked,
-            [event.target.name]: event.target.checked,
-        });
-    };
-
-    return (
-        <Fragment>
-            <Tags
-                arr={Object.entries(checked).map((v) => {
+        function getArrayforObject(term: string) {
+            return Object.entries(filtersArray[term])
+                .map((v) => {
                     if (v[1]) {
                         return v[0];
                     }
                     return null;
-                })}
+                })
+                .filter((v) => v);
+        }
+
+        return obj;
+    }
+
+    return (
+        <Fragment>
+            <Tags
+                term={term}
+                setFiltersArray={setFiltersArray}
+                filtersArray={filtersArray}
             />
-            <Popover
-                id={!!anchorEl ? "simple-popover" : undefined}
-                open={!!anchorEl}
+            <CheckboxPopover
                 anchorEl={anchorEl}
-                onClose={() => setAnchorEl(null)}
-                anchorOrigin={{
-                    vertical: "bottom",
-                    horizontal: "left",
-                }}>
-                <FormGroup
-                    sx={{
-                        padding: "1rem",
-                        label: {
-                            padding: "0.5rem",
-                        },
-                    }}>
-                    {tableArr
-                        .map((v) => v[term])
-                        .map((v) => (
-                            <FormControlLabel
-                                control={
-                                    <Checkbox
-                                        key={v}
-                                        name={v}
-                                        checked={checked.v}
-                                        onChange={handleChange}
-                                        inputProps={{
-                                            "aria-label": "controlled",
-                                        }}
-                                    />
-                                }
-                                label={v}
-                            />
-                        ))}
-                </FormGroup>
-            </Popover>
+                setAnchorEl={setAnchorEl}
+                setFiltersArray={setFiltersArray}
+                filtersArray={filtersArray}
+                term={term}
+            />
             <table>
                 <thead>
                     <tr>
